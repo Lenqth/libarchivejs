@@ -1,0 +1,1 @@
+sed -e 's/var _scriptDir =/var _scriptDir = void 0 ; \/\//' dist/_worker-bundle.js > dist/worker-bundle.js

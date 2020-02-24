@@ -80,7 +80,7 @@ export class ArchiveReader{
      * @param {string} except don't skip this entry
      */
     *entries(skipExtraction = false, except = null){
-        this._archive = this._runCode.openArchive( this._filePtr, this._fileLength, this._passphrase );
+        this._archive = this._runCode.openArchive( this._filePtr, this._fileLength, this._passphrase,"SJIS");
         let entry;
         while( true ){
             entry = this._runCode.getNextEntry(this._archive);
@@ -92,6 +92,10 @@ export class ArchiveReader{
                 type: TYPE_MAP[this._runCode.getEntryType(entry)],
                 ref: entry,
             };
+            try{
+                entryData.decodedPath = this._runCode.getEntryNameCp932(entry,"UTF-8","UTF-8")
+            }catch(e){}
+
 
             if( entryData.type === 'FILE' ){
                 let fileName = entryData.path.split('/');

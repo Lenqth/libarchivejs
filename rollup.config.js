@@ -5,7 +5,7 @@ export default {
     input: 'src/webworker/worker.js',
     output: [
         {
-            file: 'dist/worker-bundle.js',
+            file: 'dist/_worker-bundle.js',
             format: 'iife'
         }
     ],

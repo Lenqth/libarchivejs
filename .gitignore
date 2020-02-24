@@ -1,1 +1,4 @@
 node_modules
+lib/build
+dist/_worker-bundle.js
+src/webworker/wasm-gen

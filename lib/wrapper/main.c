@@ -5,6 +5,8 @@
 #include <string.h>
 #include <archive.h>
 #include <archive_entry.h>
+#include <errno.h>
+#include <locale.h>
 #define EMSCRIPTEN_KEEPALIVE 
 
 EMSCRIPTEN_KEEPALIVE
@@ -13,13 +15,17 @@ const char * get_version(){
 }
 
 EMSCRIPTEN_KEEPALIVE
-void* archive_open( const void *buf, size_t size, const char * passphrase ){
+void* archive_open( const void *buf, size_t size, const char * passphrase, const char *encoding ){
   struct archive *a;
   int r;
 
   a = archive_read_new();
   archive_read_support_filter_all(a);
   archive_read_support_format_all(a);
+  if( encoding != NULL ){
+    setlocale(LC_ALL, "en_US.UTF-8");
+    archive_read_set_option(a,NULL,"hdrcharset",encoding);
+  }
 
   if( passphrase ){
     archive_read_add_passphrase(a, passphrase);

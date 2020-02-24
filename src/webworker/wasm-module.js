@@ -22,7 +22,7 @@ export class WasmModule{
             getVersion: this.cwrap('get_version', 'string', []),
             // void * archive_open( const void * buffer, size_t buffer_size)
             // retuns archive pointer
-            openArchive: this.cwrap('archive_open', 'number', ['number','number','string']),
+            openArchive: this.cwrap('archive_open', 'number', ['number','number','string','string']),
             // void * get_entry(void * archive)
             // return archive entry pointer
             getNextEntry: this.cwrap('get_next_entry', 'number', ['number']),

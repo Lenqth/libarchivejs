@@ -8,8 +8,9 @@
     "url": "https://github.com/nika-begiashvili/libarchivejs"
   },
   "scripts": {
-    "build": "rollup -c --environment BUILD:production",
-    "build-dev": "rollup -c --environment BUILD:development",
+    "build": "rollup -c --environment BUILD:production && ./mod.sh",
+    "build-dev": "rollup -c --environment BUILD:development && ./mod.sh",
+    "build-dev-full": "./lib/tools/wasm_gen.sh && rollup -c --environment BUILD:development && ./mod.sh",
     "test": "jest --runInBand"
   },
   "keywords": [
