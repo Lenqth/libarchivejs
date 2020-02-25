@@ -42,10 +42,15 @@ void* archive_open( const void *buf, size_t size, const char * passphrase, const
 EMSCRIPTEN_KEEPALIVE
 const void* get_next_entry(void *archive){
   struct archive_entry *entry;
-  if( archive_read_next_header(archive,&entry) == ARCHIVE_OK ){
+  int r;
+  r = archive_read_next_header(archive,&entry);
+  if( r == ARCHIVE_OK ){
     return entry;
-  }else{
+  }else if( r == ARCHIVE_EOF ){
     return NULL;
+  }else{
+    // fprintf(stderr, "Error occured while reading header\n(STATUS:%d,ERRNO:%d) %s\n",r,archive_errno(archive),archive_error_string(archive));
+    return (void*)-1;
   }
 }
 
@@ -54,7 +59,7 @@ void* get_filedata(void *archive,size_t buffsize){
   void *buff = malloc( buffsize );
   int read_size = archive_read_data(archive,buff,buffsize);
   if( read_size < 0 ){
-    fprintf(stderr, "Error occured while reading file");
+    fprintf(stderr, "Error occured while reading file\n");
     return (void*) read_size;
   }else{
     return buff;

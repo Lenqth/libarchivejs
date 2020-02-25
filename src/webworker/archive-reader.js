@@ -89,8 +89,12 @@ export class ArchiveReader{
         let entry;
         while( true ){
             entry = this._runCode.getNextEntry(this._archive);
-            if( entry === 0 ) break;
-
+            if( entry === 0 ) {                
+                break;
+            }
+            if (entry === -1){
+                throw new Error(this._runCode.getError(this._archive));
+            }
             const entryData = {
                 size: this._runCode.getEntrySize(entry),
                 path: this._runCode.getEntryName(entry),
