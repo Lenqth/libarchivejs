@@ -50,6 +50,10 @@ self.onmessage = async ({data: msg}) => {
                 reader.setPassphrase( msg.passphrase );
                 self.postMessage({ type: 'PASSPHRASE_STATUS', status: true });
                 break;
+            case 'SET_ENCODING':
+                reader.setEncoding( msg.encoding );
+                self.postMessage({ type: 'ENCODING_STATUS', status: true });
+                break;
             default:
                 throw new Error('Invalid Command');
         }

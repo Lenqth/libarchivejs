@@ -95,6 +95,16 @@ export class Archive{
         );
     }
 
+    setEncoding(encoding){
+        return this._postMessage({type: 'SET_ENCODING', encoding},
+            (resolve,reject,msg) => {
+                if( msg.type === 'ENCODING_STATUS' ){
+                    resolve(msg.status);
+                }
+            }
+        );
+    }
+
     /**
      * Returns object containing directory structure and file information 
      * @returns {Promise<object>}
