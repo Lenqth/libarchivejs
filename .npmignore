@@ -1,0 +1,6 @@
+
+lib/
+test/
+jest.config.js
+rollup.config.js
+mod.sh
