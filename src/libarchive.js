@@ -1,13 +1,13 @@
 import { CompressedFile } from "./compressed-file.js";
 
 
-export class Archive{
+export class Archive {
 
     /**
      * Initialize libarchivejs
      * @param {Object} options 
      */
-    static init(options = {}){
+    static init(options = {}) {
         Archive._options = {
             workerUrl: '../dist/worker-bundle.js',
             ...options
@@ -21,11 +21,11 @@ export class Archive{
      * @param {object} options
      * @returns {Archive}
      */
-    static open(file, options = null){
-        options =   options || 
-                    Archive._options || 
-                    Archive.init() && console.warn('Automatically initializing using options: ', Archive._options);
-        const arch = new Archive(file,options);
+    static open(file, options = null) {
+        options = options ||
+            Archive._options ||
+            Archive.init() && console.warn('Automatically initializing using options: ', Archive._options);
+        const arch = new Archive(file, options);
         return arch.open();
     }
 
@@ -34,32 +34,33 @@ export class Archive{
      * @param {File} file 
      * @param {Object} options 
      */
-    constructor(file,options){
+    constructor(file, options) {
         this._worker = new Worker(options.workerUrl);
         this._worker.addEventListener('message', this._workerMsg.bind(this));
-        this._callbacks = [];
+        this._callbacks = {};
         this._content = {};
         this._processed = 0;
         this._file = file;
+        this._nextId = 0;
     }
 
     /**
      * Prepares file for reading
      * @returns {Promise<Archive>} archive instance
      */
-    async open(){
-        await this._postMessage({type: 'HELLO'},(resolve,reject,msg) => {
-            if( msg.type === 'READY' ){
+    async open() {
+        await this._postMessage({ type: 'HELLO' }, (resolve, reject, msg) => {
+            if (msg.type === 'READY') {
                 resolve();
             }
         });
-        return await this._postMessage({type: 'OPEN', file: this._file}, (resolve,reject,msg) => {
-            if(msg.type === 'OPENED'){
+        return await this._postMessage({ type: 'OPEN', file: this._file }, (resolve, reject, msg) => {
+            if (msg.type === 'OPENED') {
                 resolve(this);
             }
         });
     }
-    
+
     /**
      * Terminate worker to free up memory
      */
@@ -72,10 +73,10 @@ export class Archive{
      * detect if archive has encrypted data
      * @returns {boolean|null} null if could not be determined
      */
-    hasEncryptedData(){
-        return this._postMessage({type: 'CHECK_ENCRYPTION'}, 
-            (resolve,reject,msg) => {
-                if( msg.type === 'ENCRYPTION_STATUS' ){
+    hasEncryptedData() {
+        return this._postMessage({ type: 'CHECK_ENCRYPTION' },
+            (resolve, reject, msg) => {
+                if (msg.type === 'ENCRYPTION_STATUS') {
                     resolve(msg.status);
                 }
             }
@@ -85,20 +86,20 @@ export class Archive{
     /**
      * set password to be used when reading archive
      */
-    usePassword(archivePassword){
-        return this._postMessage({type: 'SET_PASSPHRASE', passphrase: archivePassword},
-            (resolve,reject,msg) => {
-                if( msg.type === 'PASSPHRASE_STATUS' ){
+    usePassword(archivePassword) {
+        return this._postMessage({ type: 'SET_PASSPHRASE', passphrase: archivePassword },
+            (resolve, reject, msg) => {
+                if (msg.type === 'PASSPHRASE_STATUS') {
                     resolve(msg.status);
                 }
             }
         );
     }
 
-    setEncoding(encoding){
-        return this._postMessage({type: 'SET_ENCODING', encoding},
-            (resolve,reject,msg) => {
-                if( msg.type === 'ENCODING_STATUS' ){
+    setEncoding(encoding) {
+        return this._postMessage({ type: 'SET_ENCODING', encoding },
+            (resolve, reject, msg) => {
+                if (msg.type === 'ENCODING_STATUS') {
                     resolve(msg.status);
                 }
             }
@@ -109,40 +110,40 @@ export class Archive{
      * Returns object containing directory structure and file information 
      * @returns {Promise<object>}
      */
-    getFilesObject(){
-        if( this._processed > 0 ){
-            return Promise.resolve().then( () => this._content );
+    getFilesObject() {
+        if (this._processed > 0) {
+            return Promise.resolve().then(() => this._content);
         }
-        return this._postMessage({type: 'LIST_FILES'}, (resolve,reject,msg) => {
-            if( msg.type === 'ENTRY' ){
+        return this._postMessage({ type: 'LIST_FILES' }, (resolve, reject, msg) => {
+            if (msg.type === 'ENTRY') {
                 const entry = msg.entry;
-                const [ target, prop ] = this._getProp(this._content,entry.path);
-                if( entry.type === 'FILE' ){
-                    target[prop] = new CompressedFile(entry.fileName,entry.size,entry.path,this);                    
+                const [target, prop] = this._getProp(this._content, entry.path);
+                if (entry.type === 'FILE') {
+                    target[prop] = new CompressedFile(entry.fileName, entry.size, entry.path, this);
                 }
                 return true;
-            }else if( msg.type === 'END' ){
+            } else if (msg.type === 'END') {
                 this._processed = 1;
                 resolve(this._cloneContent(this._content));
             }
         });
     }
 
-    getFilesArray(){
-        return this.getFilesObject().then( (obj) => {
+    getFilesArray() {
+        return this.getFilesObject().then((obj) => {
             return this._objectToArray(obj);
         });
     }
 
-    extractSingleFile(target){
+    extractSingleFile(target) {
         // Prevent extraction if worker already terminated
-        if( this._worker === null ){
+        if (this._worker === null) {
             throw new Error("Archive already closed");
         }
 
-        return this._postMessage({type: 'EXTRACT_SINGLE_FILE', target: target}, 
-            (resolve,reject,msg) => {
-                if( msg.type === 'FILE' ){
+        return this._postMessage({ type: 'EXTRACT_SINGLE_FILE', target: target },
+            (resolve, reject, msg) => {
+                if (msg.type === 'FILE') {
                     const file = new File([msg.entry.fileData], msg.entry.fileName, {
                         type: 'application/octet-stream'
                     });
@@ -157,26 +158,26 @@ export class Archive{
      * @param {Function} extractCallback
      * 
      */
-    extractFiles(extractCallback){
-        if( this._processed > 1 ){
-            return Promise.resolve().then( () => this._content );
+    extractFiles(extractCallback) {
+        if (this._processed > 1) {
+            return Promise.resolve().then(() => this._content);
         }
-        return this._postMessage({type: 'EXTRACT_FILES'}, (resolve,reject,msg) => {
-            if( msg.type === 'ENTRY' ){
-                const [ target, prop ] = this._getProp(this._content,msg.entry.path);
-                if( msg.entry.type === 'FILE' ){
+        return this._postMessage({ type: 'EXTRACT_FILES' }, (resolve, reject, msg) => {
+            if (msg.type === 'ENTRY') {
+                const [target, prop] = this._getProp(this._content, msg.entry.path);
+                if (msg.entry.type === 'FILE') {
                     target[prop] = new File([msg.entry.fileData], msg.entry.fileName, {
                         type: 'application/octet-stream'
                     });
                     if (extractCallback !== undefined) {
-                        setTimeout(extractCallback.bind(null,{
+                        setTimeout(extractCallback.bind(null, {
                             file: target[prop],
                             path: msg.entry.path,
                         }));
                     }
                 }
                 return true;
-            }else if( msg.type === 'END' ){
+            } else if (msg.type === 'END') {
                 this._processed = 2;
                 this._worker.terminate();
                 resolve(this._cloneContent(this._content));
@@ -184,64 +185,68 @@ export class Archive{
         });
     }
 
-    _cloneContent(obj){
-        if( obj instanceof File || obj instanceof CompressedFile || obj === null ) return obj;
+    _cloneContent(obj) {
+        if (obj instanceof File || obj instanceof CompressedFile || obj === null) return obj;
         const o = {};
-        for( const prop of Object.keys(obj) ){
+        for (const prop of Object.keys(obj)) {
             o[prop] = this._cloneContent(obj[prop]);
         }
         return o;
     }
 
-    _objectToArray(obj,path = ''){
+    _objectToArray(obj, path = '') {
         const files = [];
-        for( const key of Object.keys(obj) ){
-            if( obj[key] instanceof File || obj[key] instanceof CompressedFile || obj[key] === null ){
+        for (const key of Object.keys(obj)) {
+            if (obj[key] instanceof File || obj[key] instanceof CompressedFile || obj[key] === null) {
                 files.push({
                     file: obj[key] || key,
                     path: path
                 });
-            }else{
-                files.push( ...this._objectToArray(obj[key],`${path}${key}/`) );
+            } else {
+                files.push(...this._objectToArray(obj[key], `${path}${key}/`));
             }
         }
         return files;
     }
 
-    _getProp(obj,path){
+    _getProp(obj, path) {
         const parts = path.split('/');
-        if( parts[parts.length -1] === '' ) parts.pop();
+        if (parts[parts.length - 1] === '') parts.pop();
         let cur = obj, prev = null;
-        for( const part of parts ){
+        for (const part of parts) {
             cur[part] = cur[part] || {};
             prev = cur;
             cur = cur[part];
         }
-        return [ prev, parts[parts.length-1] ];
+        return [prev, parts[parts.length - 1]];
     }
 
-    _postMessage(msg,callback){
-        this._worker.postMessage(msg);
-        return new Promise((resolve,reject) => {
-            this._callbacks.push( this._msgHandler.bind(this,callback,resolve,reject) );
+    _postMessage(msg, callback) {
+        const m_id = this._nextId++
+        const idMsg = Object.assign({ m_id }, msg)
+        //console.log("=>", idMsg)
+        this._worker.postMessage(idMsg);
+        return new Promise((resolve, reject) => {
+            this._callbacks[m_id] = (this._msgHandler.bind(this, callback, resolve, reject));
         });
     }
 
-    _msgHandler(callback,resolve,reject,msg){
-        if( msg.type === 'BUSY' ){
+    _msgHandler(callback, resolve, reject, msg) {
+        if (msg.type === 'BUSY') {
             reject('worker is busy');
-        }else if( msg.type === 'ERROR' ){
+        } else if (msg.type === 'ERROR') {
             reject(msg.error);
-        }else{
-            return callback(resolve,reject,msg);
+        } else {
+            return callback(resolve, reject, msg);
         }
     }
 
-    _workerMsg({data: msg}){
-        const callback = this._callbacks[this._callbacks.length -1];
+    _workerMsg({ data: msg }) {
+        //console.log("<=", msg)
+        const callback = this._callbacks[msg.m_id];
         const next = callback(msg);
-        if( !next ){
-            this._callbacks.pop();
+        if (!next) {
+            delete this._callbacks[msg.m_id];
         }
     }
 
